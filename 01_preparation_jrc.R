@@ -2,54 +2,52 @@
 # Entrée requise : financials_clean_info et JRC_EU_ETS_FIRMS_V2_012022_public
 # Sortie : financials_match_filtre (étape intermédiaire)
 
-#match avec ets 
+# 1. Sélection des entreprises EU ETS
 library(dplyr)
 
 table(JRC_EU_ETS_FIRMS_V2_012022_public$EUTL_NATIONAL_REGISTRY_CODE)
 colnames(JRC_EU_ETS_FIRMS_V2_012022_public)
 
-jrc_ets <- JRC_EU_ETS_FIRMS_V2_012022_public |> 
+jrc_ets <- JRC_EU_ETS_FIRMS_V2_012022_public |>
   filter(EUTL_NATIONAL_REGISTRY_CODE %in% c("DE", "FR", "IT", "ES"))
 
-jrc_ets <- jrc_ets |> 
+jrc_ets <- jrc_ets |>
   mutate(ets=1)
 
 table(jrc_ets$JRC_IS_VALIDATED)
 
-jrc_ets_validated <- jrc_ets |> 
+jrc_ets_validated <- jrc_ets |>
   filter(JRC_IS_VALIDATED=="TRUE")
 
-jrc_ets_validated |> 
-  group_by(EUTL_NATIONAL_REGISTRY_CODE) |> 
+jrc_ets_validated |>
+  group_by(EUTL_NATIONAL_REGISTRY_CODE) |>
   summarize(n=n_distinct(JRC_REGID_STD))
 
-
-jrc_ets_validated <- jrc_ets_validated |> 
+jrc_ets_validated <- jrc_ets_validated |>
   mutate(bvdid = if_else(EUTL_NATIONAL_REGISTRY_CODE=="DE", substr(ORBIS_BVD_ID,3,nchar(ORBIS_BVD_ID)), JRC_REGID_STD))
 
-jrc_ets_validated <- jrc_ets_validated |> 
+jrc_ets_validated <- jrc_ets_validated |>
   mutate(bvdid = if_else(substr(ORBIS_BVD_ID,1,2)=="IT", substr(ORBIS_BVD_ID,3, nchar(ORBIS_BVD_ID)), bvdid))
 
-
-jrc_ets_match <- jrc_ets_validated |> 
-  select(bvdid, ets) |> 
+jrc_ets_match <- jrc_ets_validated |>
+  select(bvdid, ets) |>
   distinct()
-#match
+# 2. Rapprochement avec Orbis
 
-financials_match <- financials_clean_info |> 
+financials_match <- financials_clean_info |>
   left_join(jrc_ets_match,
             by=c("bvdid"))
 
-financials_match <- financials_match |> 
+financials_match <- financials_match |>
   mutate(ets=if_else(is.na(ets),0,ets))
-         
-financials_match |> 
-  group_by(country_code, ets) |> 
+
+financials_match |>
+  group_by(country_code, ets) |>
   summarize(n=n_distinct(bvdid))
 
-financials_match <- financials_match |> 
+financials_match <- financials_match |>
   mutate(annee=substr(closing_date, 1,4))
- 
+
 table(financials_match$annee)
 
 financials_match <- financials_match |>
@@ -62,7 +60,6 @@ financials_match <- financials_match |>
 
 financials_match |>
   count(consolidation_code, sort = TRUE)
-
 
 financials_match <- financials_match |>
   mutate(
@@ -79,14 +76,13 @@ financials_match <- financials_match |>
   filter(priority_conso == min(priority_conso)) |>
   ungroup()
 
-financials_match <- financials_match |> 
+financials_match <- financials_match |>
   filter(annee>=2000)
-financials_match <- financials_match |> 
+financials_match <- financials_match |>
   filter (annee <=2014)
 
 financials_match <- financials_match |>
   group_by(bvdid, annee) |>
-  
 
   filter(closing_date == max(closing_date, na.rm = TRUE)) |>
   ungroup()
@@ -94,21 +90,21 @@ financials_match <- financials_match |>
 # Export désactivé : ne pas diffuser les données financières sous licence.
 # write.csv(financials_match, "data/financials_match.csv")
 
-financials_match <- financials_match |> 
+financials_match <- financials_match |>
   mutate(nace_3_digits=substr(nace_rev_2_core_code_4_digits, 1,3))
 
-liste_nace_ets <- financials_match |> 
-  filter(ets == 1) |> 
-  group_by(nace_3_digits) |> 
-  summarize(n = n_distinct(bvdid)) |> 
-  arrange(desc(n)) |> 
+liste_nace_ets <- financials_match |>
+  filter(ets == 1) |>
+  group_by(nace_3_digits) |>
+  summarize(n = n_distinct(bvdid)) |>
+  arrange(desc(n)) |>
   pull(nace_3_digits)
 
-financials_match_filtre <- financials_match |> 
+financials_match_filtre <- financials_match |>
   filter(nace_3_digits %in% liste_nace_ets )
 
-financials_match_filtre |> 
-  group_by(country_code, ets) |> 
+financials_match_filtre |>
+  group_by(country_code, ets) |>
   summarize(n=n_distinct(bvdid))
 
 library(data.table)
@@ -165,5 +161,4 @@ financials_match_filtre[
 sum(flag_sales, na.rm = TRUE)
 sum(is.na(financials_match_filtre$sales))
 
-# Valeurs des effectifs en t-1 et t+1
- 
+# Fin de l'extrait disponible : la suite du nettoyage n'est pas fournie.

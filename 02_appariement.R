@@ -2,59 +2,24 @@
 # Entrée requise : financials_match_filtre2 (préparation intermédiaire non fournie)
 # Sorties : financials_match_filtre3, pre_match, ids_complets, pool_matching, m
 
+library(dplyr)
 library(MatchIt)
 library(cobalt)
 
-bvdid_post_phase1 <- c(
-  "00257660720",
-  "00734630155",
-  "01402740060",
-  "01660360601",
-  "4150006965",
-  "4250002471",
-  "8190549720",
-  "A28854727",
-  "A35091719",
-  "A58352311",
-  "B16232415",
-  "B35782580",
-  "F14014245",
-  "F15016124",
-  "00184610657",
-  "00170370654",
-  "00170540652",
-  "00185570652",
-  "00282900653",
-  "01057390658",
-  "01857170656",
-  "01983720655",
-  "02126240650",
-  "02512930658",
-  "02638240651",
-  "7330329496",
-  "00139620405",
-  "01752970580",
-  "02168860399",
-  "03269160960",
-  "A08435547",
-  "A12030821",
-  "A12091575",
-  "A15011018",
-  "A28101020",
-  "A28225266",
-  "A28885614",
-  "A31001738",
-  "A39289632",
-  "A50122480",
-  "A81047375",
-  "B12305520",
-  "B61714184",
-  "F31600240",
-  "A30006142",
-  "317803443",
-  "8190548479",
-  "B12479259"
-)
+# Liste privée : conserver exactement les exclusions de l'analyse initiale.
+# Fournir un fichier RDS contenant un vecteur de 48 identifiants (caractères).
+exclusions_path <- Sys.getenv("EU_ETS_EXCLUSIONS_FILE")
+if (!nzchar(exclusions_path) || !file.exists(exclusions_path)) {
+  stop("Définir EU_ETS_EXCLUSIONS_FILE vers le fichier RDS privé des exclusions.")
+}
+bvdid_post_phase1 <- readRDS(exclusions_path)
+if (!is.character(bvdid_post_phase1) ||
+    length(bvdid_post_phase1) != 48L ||
+    anyNA(bvdid_post_phase1) ||
+    any(!nzchar(bvdid_post_phase1)) ||
+    anyDuplicated(bvdid_post_phase1)) {
+  stop("Le fichier privé doit contenir les 48 identifiants distincts d'origine.")
+}
 
 financials_match_filtre3 <- financials_match_filtre2 |>
   filter(
@@ -122,7 +87,5 @@ m <- matchit(
   std.caliper = TRUE
 )
 
-summary(m)   # regarde le nombre de traités appariés
-
-library(dplyr)
+summary(m)   # Nombre de traités appariés
 

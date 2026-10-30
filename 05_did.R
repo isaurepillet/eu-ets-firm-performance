@@ -5,7 +5,10 @@ panel_did <- panel_es |>
     post = as.integer(annee >= 2005)
   )
 
-# Sans effets fixes
+library(dplyr)
+library(fixest)
+
+# 1. Modèles sans effets fixes et avec effets fixes entreprise + année
 did_turnover_noFE <- feols(
   log_turnover ~ ets * post,
   data = panel_did,
@@ -65,7 +68,7 @@ etable(
   did_assets_FE,
   did_employment_noFE,
   did_employment_FE,
-  
+
   headers = c(
     "CA - sans EF",
     "CA - avec EF",
@@ -74,13 +77,13 @@ etable(
     "Emploi - sans EF",
     "Emploi - avec EF"
   ),
-  
+
   keep = "ets:post|ets x post",
-  
+
   fitstat = ~ n + r2 + ar2
 )
 
-#II par pays
+# 2. Modèles avec effets fixes entreprise, pays × année et secteur × année
 
 # Chiffre d'affaires
 did_turnover_fullFE <- feols(
@@ -117,35 +120,35 @@ etable(
   did_turnover_noFE,
   did_turnover_FE,
   did_turnover_fullFE,
-  
+
   did_assets_noFE,
   did_assets_FE,
   did_assets_fullFE,
-  
+
   did_employment_noFE,
   did_employment_FE,
   did_employment_fullFE,
-  
+
   headers = c(
     "CA - sans EF",
     "CA - firme + année",
     "CA - EF renforcés",
-    
+
     "Actifs - sans EF",
     "Actifs - firme + année",
     "Actifs - EF renforcés",
-    
+
     "Emploi - sans EF",
     "Emploi - firme + année",
     "Emploi - EF renforcés"
   ),
-  
+
   keep = "ets:post|ets x post",
-  
+
   fitstat = ~ n + r2 + ar2
 )
 
-
+# 3. Hétérogénéité par pays
 panel_did <- panel_did |>
   mutate(
     did_DE = ets * post * (country_code == "DE"),
@@ -188,19 +191,19 @@ etable(
   did_country_turnover,
   did_country_assets,
   did_country_employment,
-  
+
   headers = c(
     "Chiffre d'affaires",
     "Actifs totaux",
     "Emploi"
   ),
-  
+
   dict = c(
     did_DE = "Allemagne × ETS × Post",
     did_ES = "Espagne × ETS × Post",
     did_FR = "France × ETS × Post",
     did_IT = "Italie × ETS × Post"
   ),
-  
+
   fitstat = ~ n + r2 + ar2
 )
