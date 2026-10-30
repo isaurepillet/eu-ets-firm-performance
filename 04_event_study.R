@@ -28,13 +28,13 @@ panel_es <- financials_match_filtre3 |>
       log(operating_revenue_turnover),
       NA_real_
     ),
-    
+
     log_assets = if_else(
       total_assets > 0,
       log(total_assets),
       NA_real_
     ),
-    
+
     log_employees = if_else(
       number_of_employees > 0,
       log(number_of_employees),
@@ -105,7 +105,7 @@ wald_employment
 # ============================================================
 
 prep_es <- function(model, variable) {
-  
+
   broom::tidy(
     model,
     conf.int = TRUE,
@@ -125,7 +125,7 @@ prep_es <- function(model, variable) {
       conf.low,
       conf.high
     ) |>
-    
+
     # Ajouter 2004 = année de référence
     bind_rows(
       tibble(
@@ -138,7 +138,6 @@ prep_es <- function(model, variable) {
     ) |>
     arrange(annee)
 }
-
 
 es_data <- bind_rows(
   prep_es(
@@ -268,5 +267,3 @@ event_plot_fullFE <- ggplot(es_data, aes(x = annee, y = estimate)) +
   )
 
 event_plot_fullFE
-
- 

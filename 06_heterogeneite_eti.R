@@ -1,6 +1,10 @@
 # Requiert panel_did, pre_match et ids_complets
 # Attention : la classification ETI est recalculée pour deux analyses.
 
+library(dplyr)
+library(fixest)
+
+# 1. ETI / non-ETI : définition initiale conservée.
 taille_pre <- pre_match |>
   filter(bvdid %in% ids_complets) |>
   group_by(bvdid) |>
@@ -11,12 +15,12 @@ taille_pre <- pre_match |>
     .groups = "drop"
   ) |>
   mutate(
-    
+
     # PME : < 250 salariés ET
     # CA <= 50 M€ OU bilan <= 43 M€
     pme = emp_pre < 250 &
       (ca_pre <= 50e6 | assets_pre <= 43e6),
-    
+
     # ETI : pas PME, < 5000 salariés ET
     # CA <= 1,5 Md€ OU bilan <= 2 Md€
     eti = !pme &
@@ -33,7 +37,6 @@ panel_did <- panel_did |>
 panel_did |>
   distinct(bvdid, ets, eti) |>
   count(eti, ets)
-
 
 panel_did <- panel_did |>
   mutate(
@@ -75,21 +78,20 @@ etable(
   did_size_turnover,
   did_size_assets,
   did_size_employment,
-  
+
   headers = c(
     "Chiffre d'affaires",
     "Actifs totaux",
     "Emploi"
   ),
-  
+
   dict = c(
     did_ETI = "ETI × ETS × Post",
     did_nonETI = "Autres entreprises × ETS × Post"
   ),
-  
+
   fitstat = ~ n + r2 + ar2
 )
-
 
 taille_pre <- pre_match |>
   filter(bvdid %in% ids_complets) |>
@@ -102,13 +104,13 @@ taille_pre <- pre_match |>
   ) |>
   mutate(
     categorie = case_when(
-      
+
       emp_pre < 250 &
         (ca_pre <= 50e6 | assets_pre <= 43e6) ~ "PME",
-      
+
       emp_pre < 5000 &
         (ca_pre <= 1.5e9 | assets_pre <= 2e9) ~ "ETI",
-      
+
       TRUE ~ "GE"
     )
   )
@@ -159,18 +161,18 @@ etable(
   did_cat_turnover,
   did_cat_assets,
   did_cat_employment,
-  
+
   headers = c(
     "Chiffre d'affaires",
     "Actifs totaux",
     "Emploi"
   ),
-  
+
   dict = c(
     did_PME = "PME × ETS × Post",
     did_ETI = "ETI × ETS × Post",
     did_GE  = "GE × ETS × Post"
   ),
-  
+
   fitstat = ~ n + r2 + ar2
 )

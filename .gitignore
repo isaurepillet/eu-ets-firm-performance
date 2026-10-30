@@ -16,3 +16,16 @@ outputs/*
 *.dta
 *.zip
 .DS_Store
+private/
+.env
+.env.*
+*.rda
+*.Rda
+*.feather
+*.fst
+*.qs
+*.sas7bdat
+*.sav
+*.tsv
+*.csv.gz
+*.parquet.*

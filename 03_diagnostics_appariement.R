@@ -22,7 +22,6 @@ niveaux <- pre_match |>
             assets    = mean(total_assets),
             employees = mean(number_of_employees),
             .groups = "drop")
-# ajoute l'EBIT si tu l'as : ebit = mean(ebit, na.rm = TRUE)
 
 pt <- pairs |>
   left_join(niveaux, by = c("t_bvd" = "bvdid")) |>
@@ -44,22 +43,19 @@ bind_rows(
   tester(log(pt$employees_t), log(pt$employees_c), "Log employees")
 )
 
-library(dplyr)
-library(ggplot2)
-library(patchwork)
 
 qq_plot <- function(x_t, x_c, titre, xlab, ylab) {
-  
+
   x_t <- log(x_t)
   x_c <- log(x_c)
-  
+
   d <- tibble(
     t = sort(x_t[is.finite(x_t)]),
     c = sort(x_c[is.finite(x_c)])
   )
-  
+
   lims <- range(c(d$t, d$c), na.rm = TRUE)
-  
+
   ggplot(d, aes(x = c, y = t)) +
     geom_point(size = 1.15, alpha = 0.55) +
     geom_abline(
@@ -121,7 +117,7 @@ fig12 <- (p_a | p_b) / (plot_spacer() | p_c | plot_spacer()) +
   )
 fig12
 
-#FIGURE 13
+# Figure 13 — trajectoires moyennes
 # Panel : une ligne par paire x groupe x année
 long <- bind_rows(
   pairs |> transmute(pair_id = row_number(), group = "ETS",     bvdid = t_bvd),
@@ -155,5 +151,8 @@ fig13 <- ggplot(fig13_data, aes(annee, value, colour = group)) +
   theme(legend.position = "bottom")
 fig13
 
+dir.create("outputs", recursive = TRUE, showWarnings = FALSE)
+
+# Ces graphiques utilisent des microdonnées : examiner leur diffusion séparément.
 ggsave("outputs/figure13.png", fig13, width = 9, height = 7, dpi = 300)
 ggsave("outputs/figure12.png", fig12, width = 9, height = 8, dpi = 300)
